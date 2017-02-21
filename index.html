@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta charset="utf-8">
+        <meta name="viewport"   content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="full-screen" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <meta content="" name="keywords" />
+        <title>首页</title>
+
+        <link rel="stylesheet" type="text/css" href="css/base.css">
+          <link rel="stylesheet" type="text/css" href="css/swiper.min.css">
+        <script type="text/javascript" src="js/base.js"></script>
+        <script type="text/javascript" src="js/swiper.min.js"></script>
+
+        <style type="text/css">
+            .input {width: 7.5rem; height: 0.88rem; background:#fff; border:1px solid #ddd; padding-left: 0.5rem; box-sizing:border-box;}
+
+            .areas-shandow {position: fixed; height: 100% ;background: rgba(0,0,0,0.2); width: 100%; transform:translate3d(0px, 0px, 0px); bottom: -100%;left: 0;}
+            .areas-dialog{position: fixed;top: 100%; left: 0px;z-index: 6;width: 100%; height: 100%;}
+            .areas-dialog .dialog-picker{height: 6rem;font-size: .3rem; color: #333; background-color: #fff; border-top: solid 1px #d9d9d9; }
+            .areas-dialog .hd{ overflow: hidden; padding: 0 0.2rem ; position: relative;}
+            .areas-dialog .m-tabSet { position: relative;}
+            .areas-dialog .m-tabSet .tab { display: inline-block; max-width: 2rem;margin-right: .4rem; text-align: center; text-overflow: ellipsis; white-space: nowrap;overflow: hidden;position: relative;height: 100%;line-height: 0.88rem;}
+            .areas-dialog .m-tabSet .tab.disabled { color: #999; }
+            .areas-dialog .m-tabSet .tab.active{color: #b4282d;}
+            .areas-dialog .dialog-picker .hd .confirm.disabled { color: #999;}
+            .areas-dialog .dialog-picker .hd .confirm {float: right;line-height: 0.88rem;}
+            .areas-dialog .dialog-picker .hd:after { content: '';position: absolute; background-color: #d9d9d9; left: 0; width: 100%;height: 1px; -webkit-transform-origin: 50% 100% 0;transform-origin: 50% 100% 0;bottom: 0;}
+            .areas-dialog .dialog-picker .hd .tabSet{ float: left;}
+            .areas-dialog .dialog-picker .bd {  height: 4.88rem; }
+            .areas-dialog .dialog-picker .swiper-container {margin-left: auto;margin-right: auto; position: relative; overflow: hidden;z-index: 1;}
+            .areas-dialog .dialog-picker .panel { height: 5.08rem;padding: 0  0 0.2rem 0.2rem;  box-sizing:border-box;}
+            .areas-dialog .dialog-picker .panel .item { line-height: 0.88rem;}
+            .areas-dialog .dialog-picker .panel .item.active {color: #b4282d;}
+        </style>
+    </head> 
+    <body>
+         <!-- <div class="input"></div> -->
+         <input class="input" placeholder="省、市、区"   readonly>
+
+
+         <div class="areas-shandow ">
+             <div class="areas-dialog">
+                <div class="dialog-picker">
+                    <header class="hd " >
+                        <div class="m-tabSet tabSet" >
+                            <div class="tab item active" >省份</div>
+                            <div class="tab item disabled" >城市</div>
+                            <div class="tab item disabled" >区县</div>
+                        </div>
+                        <a class="confirm disabled" >确定</a>
+                    </header>
+                    <div class="swiper-container bd " >
+                        <div class="swiper-wrapper" >
+                        </div>
+                    </div>
+                </div>
+             </div>
+         </div>
+
+
+         <script type="text/javascript" src="json/area.js"></script>
+         <script type="text/javascript" src="json/city.js"></script>
+         <script type="text/javascript" src="json/province.js"></script>
+
+        <script type="text/javascript" src="js/zepto.min.js"></script>
+         <script type="text/javascript">
+
+            var mySwiper = new Swiper('.swiper-container', {
+                autoplay: 5000,//可选选项，自动滑动
+            });
+
+
+            var areaPicker = {
+                input:$('.input'),
+                province : province_object,
+                city : city_object,
+                area: area_object,
+                init:function(){
+                    var _this = this ;
+
+                    $('.input').on('click',  function(event) {
+                        $('.areas-dialog').show();
+                        $('.areas-shandow').css({'transform': 'translate3d(0px, -100%, 0px)'});
+                        $('.dialog-picker').css({'transform': 'translate3d(0px, -100%, 0px)' , 'transition-duration': '0.5s'});
+
+                        //初始化清楚
+                        $('.swiper-wrapper').empty();
+                        $('.tabSet .tab').removeClass('active').addClass('disabled');
+                        $('.tabSet .tab').eq(0).text("省份").removeClass('disabled');
+                        $('.tabSet .tab').eq(1).text('城市');
+                        $('.tabSet .tab').eq(2).text('县区');
+                        $('.confirm').addClass('disabled');
+                         _this.initProvince();
+                         mySwiper.slideTo(0, 1, false);//切换到第一个slide，速度为1秒
+                    });
+
+
+                    $('.swiper-container').on('click', '.item', function(event) {
+
+                        var _self = this ;
+                        $(_self).parent('ul').find('.item').removeClass('active');
+                        $(_self).addClass('active');
+
+                        if($(_self).attr('idx') == 'province'){
+                            $(".swiper-slide").eq(0).nextAll('.swiper-slide').remove();   
+                            $('.tabSet .tab').removeClass('disabled').eq(2).addClass('disabled');
+
+                            _this.initCity($(_self).attr('value'));
+                            mySwiper.slideNext();
+                            $('.tabSet .tab').removeClass('active').eq(1).addClass('active');
+                            $('.confirm').addClass('disabled');
+                            $('.tabSet .tab').eq(0).text($(_self).text());
+                            $('.tabSet .tab').eq(1).text('城市');
+                            $('.tabSet .tab').eq(2).text('县区');
+                        }
+
+                        if($(_self).attr('idx') == 'city'){
+                            $(".swiper-slide").eq(1).nextAll('.swiper-slide').remove();   
+                            $('.tabSet .tab').removeClass('disabled');
+                            _this.initArea($(_self).attr('value'));
+                            mySwiper.slideNext();
+                             $('.tabSet .tab').removeClass('active').eq(2).addClass('active');
+                             $('.confirm').addClass('disabled');
+                            $('.tabSet .tab').eq(1).text($(_self).text());
+                            $('.tabSet .tab').eq(2).text('县区');
+                        }
+
+                       if($(_self).attr('idx') == 'area'){
+                        $('.tabSet .tab').removeClass('disabled');
+                            $('.confirm').removeClass('disabled');
+                            $('.tabSet .tab').eq(2).text($(_self).text());
+                        }
+
+                    });
+
+                    //tab
+                    $('.tabSet ').on('click', '.tab', function(event) {
+                        var _self = $(this);
+                        if($(_self).hasClass('disabled')){
+                            return false;
+                        }
+                        var tabList = $(_self).parent().find('.tab');
+                        tabList.removeClass('active');
+                        _self.addClass('active');
+                        var _inx = tabList.index(_self);
+                        mySwiper.slideTo(_inx, 500, false);//切换到第一个slide，速度为1秒
+                    });
+
+                    $('.confirm').click(function(event) {
+                        var _self = $(this);
+                        if($(_self).hasClass('disabled')){
+                            return false;
+                        }
+                        var txt  =  $('.tabSet .tab').eq(0).text() + '、'+ $('.tabSet .tab').eq(1).text() +'、'+ $('.tabSet .tab').eq(2).text();
+
+                        $('.areas-dialog').hide();
+                        $('.areas-shandow,.dialog-picker').css({'transform': 'translate3d(0px, 0px, 0px)'});
+                        _this.input.val(txt)
+                    });
+                },
+                initProvince:function(){
+                    var _this = this ;
+                    var proHtml = '';
+                    $.each(_this.province,function(index, el) {
+                            proHtml += '<li class="item" idx="province" value="'+el.id+'">'+el.name+'</li>'
+                    });
+                    _this.addDome(proHtml);
+                },
+                initCity:function(id){
+
+                    var _this = this ;
+                    var proHtml = '';
+                    $.each(_this.city,function(index, el) {
+                        if(el.id.substring(0,2) == id.substring(0,2)){
+                             proHtml += '<li class="item" idx="city" value="'+el.id+'">'+el.name+'</li>'
+                        }            
+                    });
+
+                   _this.addDome(proHtml);
+                },
+                initArea:function(id){
+                    var _this = this ;
+                    var proHtml = '';
+                    $.each(_this.area,function(index, el) {
+                        if(el.id.substring(0,4) == id.substring(0,4)){
+                             proHtml += '<li class="item" idx="area" value="'+el.id+'">'+el.name+'</li>'
+                        }            
+                    });
+                    _this.addDome(proHtml);
+                    
+                },
+                addDome:function(innner){
+                    $('.swiper-wrapper').append('<div class="swiper-slide panel " >'
+                                                    +'<div style="position:relative;height:100%;width:100%;overflow:scroll;box-sizing:border-box;" >'
+                                                        +'<ul class="list" >'
+                                                            + innner 
+                                                        +'</ul>'
+                                                    +'</div>'
+                                                +'</div>');
+                    mySwiper.updateSlidesSize();
+                }
+            }
+            areaPicker.init();
+
+         </script>
+    </body>
+</html>
